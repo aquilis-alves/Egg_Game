@@ -17,11 +17,16 @@ ground_height = 720 // 2 - 50
 gravity = 0.9
 
 # obstacles config
+# rock configs
 rock_tipes = [pygame.image.load(os.path.join('assets/obstacles/rocks', 'rock.png')), pygame.image.load(os.path.join('assets/obstacles/rocks', 'big_rock.png'))]
-x_rock = 1280 - 60
-rock_velocity = 10
 is_spawned = False
-rock_rects = []
+
+# bird configs
+bird_sprites = [pygame.image.load(os.path.join('assets/obstacles/bird', 'bird_1.png')), pygame.image.load(os.path.join('assets/obstacles/bird', 'bird_2.png'))]
+is_open = False
+
+x_obstacle = 1280 - 60
+obstacle_velocity = -10
 
 # player configs
 player = [pygame.image.load(os.path.join('assets/ovo_images', 'egg.png')), pygame.image.load(os.path.join('assets/ovo_images', 'jump_egg.png'))]
@@ -29,7 +34,11 @@ x_player, y_player = 80, ground_height
 y_velocity = 0
 jump_force = -13
 in_air = False
-player_rects = pygame.Rect(x_player, y_player, player[0].get_width(), player[0].get_height())
+
+# Initial variables for animation
+frame_index = 0
+last_update = pygame.time.get_ticks()
+animation_speed = 110
 
 # walk sound
 pygame.mixer.Sound(os.path.join('assets/sounds', 'walk.mp3')).play(loops=-1)
@@ -38,6 +47,15 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+
+    #control animations
+    now = pygame.time.get_ticks()
+    if now - last_update > animation_speed:
+        last_update = now
+        frame_index += 1
+        
+        if frame_index >= len(bird_sprites):
+            frame_index = 0
 
     # setup
     screen.fill("black")
@@ -69,36 +87,36 @@ while running:
         in_air = False
         y_velocity = 0
 
-    # update hitbox position
-    player_rects.topleft = (x_player, y_player)
-
-    # rock spawn and logic
+    # rock and bird spawn logic
     if not is_spawned:
-        rock = rock_tipes[random.randint(0, 1)]
-        rock_rect = pygame.Rect(x_rock, ground_height, rock.get_width(), rock.get_height())
-        rock_rects.append(rock_rect)
-        is_spawned = True
+        is_bird = random.randint(0, 1)
 
-    elif is_spawned:
-        for rock, rock_rect in zip(rock_tipes, rock_rects):
-            screen.blit(rock, rock_rect.topleft)
-            rock_rect.x -= rock_velocity
+        if  is_bird:
+            obstacle = rock_tipes[random.randint(0, 1)]
+            y_obstacle = ground_height
 
-        rock_rects = [r for r in rock_rects if r.x > 0]
+        else:
+            obstacle = bird_sprites
+            y_obstacle = random.choice([ground_height - 20, ground_height - 62, ground_height - 10])
 
-        if len(rock_rects) == 1:
-            x_rock = 1280 - 60
-            is_spawned = False
+        is_spawned = not is_spawned
 
-    # colision
-    for rock_rect in rock_rects:
-        if player_rects.colliderect(rock_rect):
-            print('fim da linha')
-            running = False
+    else:
+        if is_bird:
+            x_obstacle += obstacle_velocity
+            screen.blit(obstacle, (x_obstacle, y_obstacle))
+
+        else:
+            x_obstacle += obstacle_velocity - 5
+            screen.blit(obstacle[frame_index], (x_obstacle, y_obstacle))
+
+        if x_obstacle <= -5:
+            is_spawned = not is_spawned
+            x_obstacle = 1280 - 80
 
     #setup 2
     screen.blit(grass, (backgorund_position, 1))
-    backgorund_position -= rock_velocity
+    backgorund_position += obstacle_velocity
 
     if backgorund_position == -1280:
         temp = backgorund_position
