@@ -1,8 +1,7 @@
-import pygame
-import random
 import os
-
+import pygame
 import pygame.locals
+import random
 
 pygame.init()
 screen = pygame.display.set_mode((1280, 720))
@@ -17,23 +16,25 @@ ground_height = 720 // 2 - 50
 gravity = 0.9
 
 # obstacles config
-# rock configs
-rock_tipes = [pygame.image.load(os.path.join('assets/obstacles/rocks', 'rock.png')), pygame.image.load(os.path.join('assets/obstacles/rocks', 'big_rock.png'))]
 is_spawned = False
+obstacle_hitbox = []
+
+# rock configs
+rock_sprites = [pygame.image.load(os.path.join('assets/obstacles/rocks', 'rock.png')), pygame.image.load(os.path.join('assets/obstacles/rocks', 'big_rock.png'))]
 
 # bird configs
 bird_sprites = [pygame.image.load(os.path.join('assets/obstacles/bird', 'bird_1.png')), pygame.image.load(os.path.join('assets/obstacles/bird', 'bird_2.png'))]
-is_open = False
 
 x_obstacle = 1280 - 60
 obstacle_velocity = -10
 
 # player configs
 player = [pygame.image.load(os.path.join('assets/ovo_images', 'egg.png')), pygame.image.load(os.path.join('assets/ovo_images', 'jump_egg.png'))]
-x_player, y_player = 80, ground_height
+x_player, y_player = 90, ground_height
 y_velocity = 0
 jump_force = -13
 in_air = False
+player_hitbox = pygame.Rect(x_player, y_player, player[1].get_width(), player[1].get_height())
 
 # Initial variables for animation
 frame_index = 0
@@ -66,6 +67,37 @@ while running:
         screen.blit(background, (new_background, 0))
         screen.blit(grass, (new_background, 0))
 
+    # rock and bird spawn logic
+    if not is_spawned:
+        not_is_bird = random.randint(0, 1)
+
+        if  not_is_bird:
+            obstacle = rock_sprites[random.randint(0, 1)]
+            y_obstacle = ground_height
+            obstacle_hitbox = pygame.Rect(x_obstacle, y_obstacle, obstacle.get_width(), obstacle.get_height())
+
+        else:
+            obstacle = bird_sprites
+            y_obstacle = random.choice([ground_height, ground_height - 62, ground_height - 16])
+            obstacle_hitbox = pygame.Rect(x_obstacle, y_obstacle, obstacle[0].get_width(), obstacle[0].get_height())
+
+        is_spawned = not is_spawned
+
+    else:
+        if not_is_bird:
+            x_obstacle += obstacle_velocity
+            obstacle_hitbox.x = x_obstacle
+            screen.blit(obstacle, (x_obstacle, y_obstacle))
+
+        else:
+            x_obstacle += obstacle_velocity - 5
+            obstacle_hitbox.x = x_obstacle
+            screen.blit(obstacle[frame_index], (x_obstacle, y_obstacle))
+
+        if x_obstacle <= -5:
+            is_spawned = not is_spawned
+            x_obstacle = 1280 - 80
+
     # interface
     keys = pygame.key.get_pressed()
     if keys[pygame.K_SPACE] and not in_air:
@@ -87,32 +119,13 @@ while running:
         in_air = False
         y_velocity = 0
 
-    # rock and bird spawn logic
-    if not is_spawned:
-        is_bird = random.randint(0, 1)
+    player_hitbox.y = y_player
 
-        if  is_bird:
-            obstacle = rock_tipes[random.randint(0, 1)]
-            y_obstacle = ground_height
-
-        else:
-            obstacle = bird_sprites
-            y_obstacle = random.choice([ground_height - 20, ground_height - 62, ground_height - 10])
-
-        is_spawned = not is_spawned
-
-    else:
-        if is_bird:
-            x_obstacle += obstacle_velocity
-            screen.blit(obstacle, (x_obstacle, y_obstacle))
-
-        else:
-            x_obstacle += obstacle_velocity - 5
-            screen.blit(obstacle[frame_index], (x_obstacle, y_obstacle))
-
-        if x_obstacle <= -5:
-            is_spawned = not is_spawned
-            x_obstacle = 1280 - 80
+    # colision
+    if player_hitbox.colliderect(obstacle_hitbox):
+        pygame.display.flip()
+        pygame.time.wait(3000)
+        running = False
 
     #setup 2
     screen.blit(grass, (backgorund_position, 1))
