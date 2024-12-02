@@ -29,7 +29,7 @@ x_obstacle = 1280 - 60
 obstacle_velocity = -10
 
 # player configs
-player = [pygame.image.load(os.path.join('assets/ovo_images', 'egg.png')), pygame.image.load(os.path.join('assets/ovo_images', 'jump_egg.png'))]
+player = [pygame.image.load(os.path.join('assets/ovo_images', 'egg.png')), pygame.image.load(os.path.join('assets/ovo_images', 'jump_egg.png')), pygame.transform.scale(pygame.image.load(os.path.join('assets/ovo_images', 'game_over.png')), (84, 74))]
 x_player, y_player = 90, ground_height
 y_velocity = 0
 jump_force = -13
@@ -42,7 +42,7 @@ last_update = pygame.time.get_ticks()
 animation_speed = 110
 
 # walk sound
-pygame.mixer.Sound(os.path.join('assets/sounds', 'walk.mp3')).play(loops=-1)
+walk = pygame.mixer.Sound(os.path.join('assets/sounds', 'walk.mp3')).play(loops=-1)
 
 while running:
     for event in pygame.event.get():
@@ -123,6 +123,12 @@ while running:
 
     # colision
     if player_hitbox.colliderect(obstacle_hitbox):
+        screen.blit(background, (backgorund_position, 0))
+        screen.blit(grass, (backgorund_position, 1))
+        screen.blit(obstacle if not_is_bird else obstacle[frame_index], (x_obstacle, y_obstacle))
+        screen.blit(player[2], (x_player, y_player))
+        pygame.mixer.Sound(os.path.join('assets/sounds', 'egg-cracking.mp3')).play()
+        walk.stop()
         pygame.display.flip()
         pygame.time.wait(3000)
         running = False
